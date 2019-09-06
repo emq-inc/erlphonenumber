@@ -22,3 +22,4 @@ logs
 rebar.lock
 rebar3.crashdump
 rel/example_project
+tags

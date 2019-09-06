@@ -8,6 +8,7 @@
    ]},
   {env,[]},
   {modules, []},
+  {mod, {erlphonenumber_app, []}},
 
   {maintainers, []},
   {licenses, ["Apache 2.0"]},
