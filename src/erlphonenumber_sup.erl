@@ -24,7 +24,16 @@ start_link() ->
 %%%===================================================================
 
 init([]) ->
-    {ok, {#{}, []}}.
+    SupFlags = #{ strategy => one_for_one,
+                  intensity => 1000000,
+                  period => 1 },
+    ChildSpecs = [#{ id => erlphonenumber,
+                     start => {erlphonenumber, start_link, []},
+                     restart => permanent,
+                     shutdown => 5000,
+                     type => worker,
+                     modules => [erlphonenumber] }],
+    {ok, {SupFlags, ChildSpecs}}.
 
 
 %%%===================================================================
