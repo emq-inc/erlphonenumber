@@ -56,13 +56,15 @@ parse2(Tag, Elements) when Tag == territories; Tag == numberFormat ->
     parse3(Elements);
 parse2(Tag, Elements) when Tag == territory ->
     Map = parse3(Elements),
-    #{ maps:get(countryCode, Map) => Map };
+    CountryCode = maps:get(countryCode, Map),
+    CountryID = maps:get(id, Map),
+    #{ {CountryCode, CountryID} => Map };
 parse2(Tag, Elements) when Tag == availableFormats ->
     #{ Tag => [parse(Element) || Element <- Elements] };
 parse2(Tag, [Text]) when Tag == leadingDigits;
                          Tag == nationalNumberPattern;
                          Tag == nationalPrefixForParsing ->
-    #{ Tag => re:replace(Text, <<"\s">>, <<>>, [global, {return, binary}]) };
+    #{ Tag => re:replace(Text, <<"\s|\n">>, <<>>, [global, {return, binary}]) };
 parse2(Tag, [Text]) when Tag == national; Tag == localOnly ->
     {match, Matches} = re:run(Text, "\\[(\\d+)-(\\d+)\\]|,?(\\d+),?",
                               [global, {capture, all_but_first, binary}]),
