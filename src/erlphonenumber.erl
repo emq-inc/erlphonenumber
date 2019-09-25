@@ -1,7 +1,5 @@
 -module(erlphonenumber).
 
--include("erlphonenumber.hrl").
-
 -export([start_link/0]).
 -export([parse/1,
          number_type/1,
@@ -29,6 +27,9 @@ parse(RawInput) when is_binary(RawInput) ->
     Result#{ raw_input => RawInput }.
 
 
+%% number_type is simply porting from python libphonenumber
+%% python verion has more strictly checking criteria
+%% https://github.com/daviddrysdale/python-phonenumbers/blob/dev/python/phonenumbers/phonenumberutil.py#L1892
 number_type(PhoneNumber) when is_binary(PhoneNumber) ->
     NumObj = parse(PhoneNumber),
     number_type(NumObj);
@@ -90,11 +91,13 @@ is_valid_number(NumObj, Region) ->
 %%====================================================================
 
 -define(TABLE, patterns).
+-define(REGIONS_BAG, regions).
 
 init([]) ->
     Table = ets:new(?TABLE, [set, named_table]),
+    Regions = ets:new(?REGIONS_BAG, [bag, named_table]),
     load_metadata(),
-    {ok, #{ table => Table }}.
+    {ok, #{ table => Table, regions => Regions }}.
 
 
 %%====================================================================
@@ -114,8 +117,8 @@ extract_country_code(RawInput) ->
     PossibleCountry = [split_country(RawInput, N) || N <- [1, 2, 3]],
     lists:foldl(
         fun({CountryCode, National}, NumObj) ->
-                case maps:get(CountryCode, ?COUNTRY_CODE_TO_REGION_CODE, undefined) of
-                    undefined -> NumObj;
+                case ets:lookup(?REGIONS_BAG, CountryCode) of
+                    [] -> NumObj;
                     _ -> NumObj#{ country_code => CountryCode, national_number => National }
                 end;
            (undefined, NumObj) ->
@@ -124,13 +127,13 @@ extract_country_code(RawInput) ->
 
 
 match_number(#{ country_code := CountryCode } = NumObj) ->
-    RegionList = maps:get(CountryCode, ?COUNTRY_CODE_TO_REGION_CODE, []),
+    RegionList = ets:lookup(?REGIONS_BAG, CountryCode),
     case RegionList of
         [] ->
             [NumObj];
         _ ->
             lists:flatmap(
-                fun(Region) ->
+                fun({_CountryCode, Region}) ->
                     match_number(NumObj, Region)
                 end, RegionList)
     end.
@@ -183,7 +186,8 @@ load_metadata() ->
     lists:foreach(
       fun({{CountryCode, Region}, Meta}) ->
               Patterns = compile_patterns(Meta),
-              ets:insert(?TABLE, {{CountryCode, Region}, Patterns})
+              ets:insert(?TABLE, {{CountryCode, Region}, Patterns}),
+              ets:insert(?REGIONS_BAG, {CountryCode, Region})
       end, maps:to_list(Metadata)).
 
 
@@ -192,6 +196,9 @@ compile_patterns(Meta) ->
       fun(Type) ->
               case maps:get(Type, Meta, undefined) of
                   #{ nationalNumberPattern := Pattern } ->
+                      % Build a version of the pattern with a non-capturing group around it.
+                      % https://github.com/daviddrysdale/python-phonenumbers/blob/dev/python/phonenumbers/re_util.py
+                      % Function fullmatch.
                       {ok, MP} = re:compile(<<"^(?:", Pattern/binary, ")$">>),
                       [{Type, MP}];
                   _ ->

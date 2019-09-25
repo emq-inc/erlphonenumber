@@ -64,7 +64,7 @@ parse2(Tag, Elements) when Tag == availableFormats ->
 parse2(Tag, [Text]) when Tag == leadingDigits;
                          Tag == nationalNumberPattern;
                          Tag == nationalPrefixForParsing ->
-    #{ Tag => re:replace(Text, <<"\s|\n">>, <<>>, [global, {return, binary}]) };
+    #{ Tag => re:replace(Text, <<"[\s\n]">>, <<>>, [global, {return, binary}]) };
 parse2(Tag, [Text]) when Tag == national; Tag == localOnly ->
     {match, Matches} = re:run(Text, "\\[(\\d+)-(\\d+)\\]|,?(\\d+),?",
                               [global, {capture, all_but_first, binary}]),
