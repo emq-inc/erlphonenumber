@@ -1,4 +1,4 @@
--define(COUNTRY_CODE_TO_COUNTRY_ID,
+-define(COUNTRY_CODE_TO_REGION_CODE,
         #{  <<"1">> => [<<"US">>, <<"AG">>, <<"AI">>, <<"AS">>, <<"BB">>, <<"BM">>,
                         <<"BS">>, <<"CA">>, <<"DM">>, <<"DO">>, <<"GD">>, <<"GU">>,
                         <<"JM">>, <<"KN">>, <<"KY">>, <<"LC">>, <<"MP">>, <<"MS">>,

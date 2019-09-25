@@ -57,8 +57,8 @@ parse2(Tag, Elements) when Tag == territories; Tag == numberFormat ->
 parse2(Tag, Elements) when Tag == territory ->
     Map = parse3(Elements),
     CountryCode = maps:get(countryCode, Map),
-    CountryID = maps:get(id, Map),
-    #{ {CountryCode, CountryID} => Map };
+    Region = maps:get(id, Map),
+    #{ {CountryCode, Region} => Map };
 parse2(Tag, Elements) when Tag == availableFormats ->
     #{ Tag => [parse(Element) || Element <- Elements] };
 parse2(Tag, [Text]) when Tag == leadingDigits;
